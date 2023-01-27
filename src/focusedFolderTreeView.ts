@@ -1,5 +1,5 @@
-import * as vscode from "vscode";
 import { basename } from "path";
+import * as vscode from "vscode";
 
 export class focusedFolderTreeView
 	implements vscode.TreeDataProvider<FolderAndFile> {
@@ -13,9 +13,9 @@ export class focusedFolderTreeView
 		lastFocusOnLoad: boolean | undefined;
 		lastFocused: string | undefined;
 	} = {
-		lastFocusOnLoad: false,
-		lastFocused: "",
-	};
+			lastFocusOnLoad: false,
+			lastFocused: "",
+		};
 	private selectedFolder?: vscode.Uri;
 	constructor(
 		private extensionContext: vscode.ExtensionContext,
@@ -34,11 +34,11 @@ export class focusedFolderTreeView
 				.get("rememberLastFocus"),
 			lastFocused: this.workspaceRoot
 				? this.extensionContext.workspaceState.get(
-						"rsl-vsc-focused-folder.rememberLastFocus"
-				  )
+					"rsl-vsc-focused-folder.rememberLastFocus"
+				)
 				: this.extensionContext.globalState.get(
-						"rsl-vsc-focused-folder.rememberLastFocus"
-				  ),
+					"rsl-vsc-focused-folder.rememberLastFocus"
+				),
 		};
 	}
 
@@ -56,10 +56,10 @@ export class focusedFolderTreeView
 		}
 	}
 
+
 	private async recursiveFolder(uri: vscode.Uri) {
 		const folderArray = await vscode.workspace.fs.readDirectory(uri);
 		return folderArray
-			.sort((a, b) => b[1] - a[1])
 			.map((item) => {
 				const [name, type] = item;
 				const isDirectory =
@@ -71,6 +71,24 @@ export class focusedFolderTreeView
 					isDirectory,
 					vscode.Uri.joinPath(uri, "/" + name)
 				);
+			})
+			.sort((a, b) => {
+				const extA = a.label.split(".").slice(1).join(".");
+				const extB = b.label.split(".").slice(1).join(".");
+				const nameA = a.label.split(".")[0];
+				const nameB = b.label.split(".")[0];
+
+				if (extA !== extB) {
+					// if ext has "test" in it, put it at the bottom
+					if (extA.includes("_test")) {
+						return 1;
+					}
+					if (extB.includes("_test")) {
+						return -1;
+					}
+					return extA.localeCompare(extB);
+				}
+				return nameA.localeCompare(nameB);
 			});
 	}
 
@@ -98,12 +116,12 @@ export class focusedFolderTreeView
 		} else {
 			return this.selectedFolder
 				? [
-						new FolderAndFile(
-							`${basename(this.selectedFolder.path)} (Focused)`,
-							vscode.TreeItemCollapsibleState.Expanded,
-							this.selectedFolder
-						).setContextValue("focusedBaseFolder"),
-				  ]
+					new FolderAndFile(
+						`${basename(this.selectedFolder.path)} (Focused)`,
+						vscode.TreeItemCollapsibleState.Expanded,
+						this.selectedFolder
+					).setContextValue("focusedBaseFolder"),
+				]
 				: Promise.resolve([]);
 		}
 	}
@@ -124,10 +142,10 @@ export class FolderAndFile extends vscode.TreeItem {
 		this.command =
 			collapsibleState === vscode.TreeItemCollapsibleState.None
 				? {
-						arguments: [this],
-						command: "focusedFolderView.openFile",
-						title: this.label,
-				  }
+					arguments: [this],
+					command: "focusedFolderView.openFile",
+					title: this.label,
+				}
 				: undefined;
 	}
 
